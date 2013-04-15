@@ -27,6 +27,7 @@ TextLayer timeLayer; // The clock
 TextLayer dateLayer; //The date
 TextLayer dayLayer; //the day (duh)
 Layer binClock;
+int lastSecTm;
 
 
 void set_container_image(BmpContainer *bmp_container, const int resource_id, GPoint origin) {
@@ -85,7 +86,6 @@ void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
 
   PblTm currentTime;
 
-
   get_time(&currentTime);
   if(clock_is_24h_style())
   {
@@ -124,12 +124,14 @@ void drawbinarycolumn(GContext* ctx, int number, bool value) {
 void binClock_update_callback(Layer *me, GContext* ctx ) {
 	PblTm t;
 	get_time(&t);
-    
-	graphics_context_set_fill_color(ctx, GColorBlack);
-	graphics_fill_rect(ctx, GRect(0,0,45,119), 0, GCornerNone);
+  if(lastSecTm == -1 || t.tm_sec % 20 == 0)
+  {
+    lastSecTm = t.tm_sec;
+  }
+  graphics_context_set_fill_color(ctx, GColorBlack);
+  graphics_fill_rect(ctx, GRect(0,0,45,119), 0, GCornerNone);
     graphics_context_set_fill_color(ctx, GColorWhite);
-	for(int i = 0; i < 6; i++) drawcolumn (ctx, i, (t.tm_sec >> (5 - i)  & 1) ? 10 - (i % 3) : i % 4);
-	//drawcolumn(ctx, i, (i % 2) ? i % 4 : 10 - (i % 4));
+  for(int i = 0; i < 6; i++) drawcolumn (ctx, i, (lastSecTm >> (5 - i)  & 1) ? 10 - (i % 3) : i % 4);
 }
 
 
@@ -201,5 +203,6 @@ void pbl_main(void *params) {
       .tick_units = SECOND_UNIT
     }
   };
+  lastSecTm = -1;
   app_event_loop(params, &handlers);
 }
